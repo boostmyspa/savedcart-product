@@ -1,0 +1,742 @@
+{% extends store.template_path %}
+{% load static %}
+
+{% load store %}
+{% load compress %}
+{% load ab %}
+{% block head %}
+    <style>
+        @media (max-width: 768px){.radio-tile-group .input-container {
+            position: relative;
+            height: auto;
+            width: 45%;
+            margin: 2%;
+        }}
+    </style>
+
+{% endblock %}
+{% block content %}
+    <div class="container pb-5" >
+        <div class="row">
+            <div class="col-12 pt-md-5 pt-2 d-none d-md-block">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb justify-content-center justify-content-md-start">
+                        <li class="breadcrumb-item"><a href="#">SHOP</a></li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-lg-6">
+                <!-- Product title and price (visible md and down)-->
+                <div class="d-lg-none pb-2 text-center">
+                    {% if portrait_data %}
+                        <h2>Your Custom Made Bracelet</h2>
+                    {% else %}
+
+                    {% endif %}
+
+
+                </div>
+                <!-- Product gallery-->
+                <div class="product-gallery p-3 position-sticky" style="top:0;padding-left:0!important;">
+                    {% if images %}
+                        {% for image in images %}
+                            {% if image.wm_image %}
+                            <img src="{{ image.wm_image.url }}" alt="Product">
+                            {% else %}
+                            <img src="{{ image.finished_image.url }}" alt="Product">
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+
+                    <img class="img-fluid" src="{{ object.get_image.url }}"/>
+
+                    {% endif %}
+
+                </div>
+                <!-- Related products (visible lg and up)-->
+
+            </div>
+            <!-- Product details column            -->
+            <div class="col-lg-5 col-lg-offset-1">
+                <!-- Product title and price (visible lg and up)-->
+
+                <div class="card p-3 mb-3 " v-if="editting">
+
+                    <h2>{% if object.first_one_free %}FREE {% endif %}{{ object.name }}</h2>
+                <p><span style="margin-right: 5px;text-decoration: line-through;color: #666;">{% if object.was_price and object.was_price > object.price %}({{ object|currency_was_string:currency }}){% endif %}</span><span style="font-weight: 900;">{% if object.first_one_free %}{{ 0.00|format_currency_string:currency }}{% else %}{{ object.price|format_currency_string:currency }}{% endif %}</span></p>
+                    {% if object.star_count %}<p><svg xmlns="http://www.w3.org/2000/svg" id="color" enable-background="new 0 0 24 24" height="15" viewBox="0 0 24 24" width="15"><path d="m23.363 8.584-7.378-1.127-3.307-7.044c-.247-.526-1.11-.526-1.357 0l-3.306 7.044-7.378 1.127c-.606.093-.848.83-.423 1.265l5.36 5.494-1.267 7.767c-.101.617.558 1.08 1.103.777l6.59-3.642 6.59 3.643c.54.3 1.205-.154 1.103-.777l-1.267-7.767 5.36-5.494c.425-.436.182-1.173-.423-1.266z" fill="#ffc107"/></svg><svg xmlns="http://www.w3.org/2000/svg" id="color" enable-background="new 0 0 24 24" height="15" viewBox="0 0 24 24" width="15"><path d="m23.363 8.584-7.378-1.127-3.307-7.044c-.247-.526-1.11-.526-1.357 0l-3.306 7.044-7.378 1.127c-.606.093-.848.83-.423 1.265l5.36 5.494-1.267 7.767c-.101.617.558 1.08 1.103.777l6.59-3.642 6.59 3.643c.54.3 1.205-.154 1.103-.777l-1.267-7.767 5.36-5.494c.425-.436.182-1.173-.423-1.266z" fill="#ffc107"/></svg><svg xmlns="http://www.w3.org/2000/svg" id="color" enable-background="new 0 0 24 24" height="15" viewBox="0 0 24 24" width="15"><path d="m23.363 8.584-7.378-1.127-3.307-7.044c-.247-.526-1.11-.526-1.357 0l-3.306 7.044-7.378 1.127c-.606.093-.848.83-.423 1.265l5.36 5.494-1.267 7.767c-.101.617.558 1.08 1.103.777l6.59-3.642 6.59 3.643c.54.3 1.205-.154 1.103-.777l-1.267-7.767 5.36-5.494c.425-.436.182-1.173-.423-1.266z" fill="#ffc107"/></svg><svg xmlns="http://www.w3.org/2000/svg" id="color" enable-background="new 0 0 24 24" height="15" viewBox="0 0 24 24" width="15"><path d="m23.363 8.584-7.378-1.127-3.307-7.044c-.247-.526-1.11-.526-1.357 0l-3.306 7.044-7.378 1.127c-.606.093-.848.83-.423 1.265l5.36 5.494-1.267 7.767c-.101.617.558 1.08 1.103.777l6.59-3.642 6.59 3.643c.54.3 1.205-.154 1.103-.777l-1.267-7.767 5.36-5.494c.425-.436.182-1.173-.423-1.266z" fill="#ffc107"/></svg><svg xmlns="http://www.w3.org/2000/svg" id="color" enable-background="new 0 0 24 24" height="15" viewBox="0 0 24 24" width="15"><path d="m23.363 8.584-7.378-1.127-3.307-7.044c-.247-.526-1.11-.526-1.357 0l-3.306 7.044-7.378 1.127c-.606.093-.848.83-.423 1.265l5.36 5.494-1.267 7.767c-.101.617.558 1.08 1.103.777l6.59-3.642 6.59 3.643c.54.3 1.205-.154 1.103-.777l-1.267-7.767 5.36-5.494c.425-.436.182-1.173-.423-1.266z" fill="#ffc107"/></svg>
+                        {{ object.star_count }} <small>({{ object.review_count }} Reviews)</small></p>{% endif %}
+                    <p>
+                        {{ object.description|safe }}
+
+                    {% csrf_token %}
+                    {% if product.bg_color or product.text_color %}
+                        <h6>Customize Your Colors</h6>
+                        <div class="row">
+
+                            <div class="col-3">
+                                <img src="https://www.placehold.it/150x200"/>
+                            </div>
+                            <div class="col-9 d-block">
+                                <h6>Select Your Colors</h6>
+                                <div class="d-flex">
+                                    {% if product.bg_color %}
+                                        <div class="m-1">
+                                            <input class="jscolor" name="background" value="000000"  v-bind:data-value="background" id="bgcolor"  @change="updateBg($event.target.jscolor.toRGBString())" style="width: 75px; text-align: center; border-radius: 3px;">
+                                        </div>
+                                    {% endif %}
+                                    {% if product.text_color %}
+                                        <div class="m-1">
+                                            <input class="jscolor" name="color" value="FFFFFF" v-bind:data-value="color" id="txtclor"  @change="updateColor($event.target.jscolor.toRGBString())" style="width: 75px; text-align: center; border-radius: 3px;">
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <small>Our Favorite Palettes</small>
+                                <div class="pt-2">
+                                    <div class="custom-control custom-option custom-control-inline mb-2">
+                                        <input class="custom-control-input" type="radio" name="color" id="blue" checked="">
+                                        <label class="custom-option-label" for="blue"
+                                               onclick="document.getElementById('txtclor').jscolor.fromRGB(23,25,23);document.getElementById('bgcolor').jscolor.fromRGB(255,255,255);"
+                                               style="background-color: rgb(255,255,255)">
+                                            <span class="custom-option-color" style="background-color:rgb(23,25,23);"></span></label>
+                                    </div>
+                                    <div class="custom-control custom-option custom-control-inline mb-2">
+                                        <input class="custom-control-input" type="radio" name="color" id="blue" checked="">
+                                        <label class="custom-option-label" for="blue"
+                                               onclick="document.getElementById('txtclor').jscolor.fromRGB(255,255,255);document.getElementById('bgcolor').jscolor.fromRGB(23,25,23);"
+                                               style="background-color:rgb(23,25,23)">
+                                            <span class="custom-option-color" style="background-color: rgb(255,255,255);"></span></label>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <small>* Due to differences in screen colors vs. print, your finished product may appear less saturated than depicted in your colorized image above.</small>
+                        </div>
+                    {% endif %}
+
+                    <div id="question_top">
+                        <div v-for="question, answer, count in question_set">
+                            <h6 class="mt-3" v-if="stepParent(count)">[[ question.name ]] </h6>
+                            <transition-group  name="fade" tag="div" mode="out-in">
+                                <div v-for="keys, title, counts in question.attributes" v-if="getStep(count, counts)" :key="title">
+                                    <div class="form-group mb-1" v-if="keys.type == 'T'">
+                                        <label class="d-block">[[ keys.question ]] (Max 20 Letters) <small style="display:block;color:red;" class="error" v-if="errors.has(title)">This field is required</small></label>
+                                        <input type="text" class="form-control" v-model="keys.answer"  :name="title"  v-validate="'required'" maxlength="20"/>
+                                        <button class="btn btn-primary btn-block px-5 mr-2 mt-3" @click="getNextStep(count, counts, title)" v-if="isMobile()"><i class="mr-2" data-feather="shopping-cart"></i>Next Step</button>
+
+                                    </div>
+                                    <div class="form-group mb-1" v-if="keys.type == 'R'">
+                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has(title)">This field is required</small></label>
+                                        <div class="custom-control custom-option custom-control-inline mb-2" v-for="answer, index in keys.answers">
+                                        <input class="custom-control-input" type="radio" :name="title" v-model="keys.answer" v-validate="'required'"  v-bind:value="index"  :id="title+'-'+index" @change="getNextStep(count, counts, 'false')">
+                                        <label class="custom-option-label" :for="title+'-'+index" style="background:white;  ">
+                                            <span class="custom-option-color" v-bind:style="{ backgroundColor: answer.title }"></span></label>
+                                        </div>
+                                        <button class="btn btn-primary btn-block px-5 mr-2 mt-3" @click="getNextStep(count, counts, title)" v-if="isMobile()"><i class="mr-2" data-feather="shopping-cart"></i>Next Step</button>
+                                    </div>
+
+                                    <div class="form-group mb-1" v-if="keys.type == 'S'">
+                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has(title)">This field is required</small></label>
+                                        <select class="form-control custom-select" id="select-input" v-model="keys.answer">
+                                            <option v-for="answer, index in keys.answers" v-bind:value="index"  :name="title"  v-validate="'required'">[[ answer.title ]]</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group mb-1" v-if="keys.type == 'I'">
+                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has('selection-'+keys.question)">This field is required</small></label>
+                                        <div class="radio-tile-group" style="justify-content: left;">
+                                            <div class="input-container" v-for="answer, index in keys.answers">
+                                                <input id="walk" class="radio-button"  type="radio" :value="index" v-model="keys.answer" :name="'selection-'+keys.question"   v-validate="'required'"  @change="getNextStep(count, counts, 'false')"/>
+                                                <div class="radio-tile">
+                                                    <img :src="answer.image" style="max-width:95%;height:auto;margin:auto"/>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-primary btn-block px-5 mr-2" @click="getNextStep(count, counts, title)" v-if="showSaveButton(keys.answer, count, counts) && !(isLastStep==step)"><i class="mr-2" data-feather="shopping-cart"></i>Saved & Next Step</button>
+
+                                    </div>
+                                    <div class="form-group mb-1" v-if="keys.type == 'W'">
+                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has(title)">This field is required</small></label>
+                                        <select class="form-control custom-select" id="select-input" v-model="keys.selection">
+                                            <option v-for="answer, index in keys.answers" v-bind:value="answer" :name="title"  v-validate="'required'">[[ index]]</option>
+                                        </select>
+                                        <div v-if="keys.selection">
+                                            [[ keys.selection.answers ]]
+                                            <label class="d-block" >[[ keys.selection.title ]] <small style="display:block;color:red;" class="error" v-if="errors.has(keys.selection)">This field is required</small></label>
+                                            <select class="form-control custom-select" id="select-input" v-model="keys.answer" >
+                                                <option v-for="answer, index in keys.selection.answers" v-bind:value="index"  :name="keys.selection"  v-validate="'required'">[[ answer.title ]]</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group mb-1" v-if="keys.type == 'V'">
+                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has('selector-'+keys.title)">This field is required</small></label>
+                                        <div class="radio-tile-group" style="justify-content: left;">
+                                            <div class="input-container" v-for="answer, index in keys.answers">
+                                                <input id="walk" class="radio-button"  type="radio" :value="answer" v-model="keys.selection" :name="'selector-'+keys.title"   v-validate="'required'"/>
+                                                <div class="radio-tile">
+                                                    <img :src="answer.image" style="max-width:95%;height:auto;margin:auto"/>
+                                                </div>
+                                            </div>
+                                            <div style="width:100%;display:flex" v-if="keys.selection">
+                                                <label class="d-block" >[[ keys.selection.title ]] <small style="display:block;color:red;" class="error" v-if="errors.has('selection-'+keys.title)">This field is required</small></label>
+                                            </div>
+                                            <div style="width:100%;display:flex" v-if="keys.selection">
+                                                <div class="input-container" v-for="answer, index in keys.selection.answers">
+                                                    <input id="walk" class="radio-button"  type="radio" :value="index" v-model="keys.answer" :name="'selection-'+keys.title"  v-validate="'required'" />
+                                                    <div class="radio-tile">
+                                                        <img :src="answer.image" style="max-width:95%;height:auto;margin:auto"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
+                                        </div>
+                                    </div>
+                                    <div class="form-group mb-1" v-if="keys.type == 'C'">
+                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has(title)">This field is required</small></label>
+
+                                        <croppa class="c1" v-model="myCroppa"
+                                                :width="300"
+                                                :height="300"
+                                                placeholder=""
+                                                :show-remove-button="true"
+                                                :initial-image="initial"
+                                                :accept="'image/*'"
+                                                :show-loading="true"
+                                                @new-image-drawn="onNewImageDrawn"
+                                                @file-size-exceed="handleFileSizeExceed"
+                                                @file-type-mismatch="handleFileTypeMismatch"
+                                                @draw="onDraw"
+                                                @zoom="onZoom"
+                                        >
+                                            <img slot="placeholder" src="{% static 'img/taptoupload.png' %}"/>
+                                        </croppa>
+                                        <div v-if="!imageNotSelected" class="d-none d-md-block">
+                                            <small>Adjust Zoom</small>
+                                            <input type="range" @input="onSliderChange" :min="sliderMin" :max="sliderMax" step=".001" v-model="sliderVal"  :name="title"  v-validate="'required'">
+
+                                        </div>
+
+                                        <input name="base64" id="picture" type="hidden" :value="dataUrl" v-bind:change="setPicture(keys)"/>
+                                    </div>
+                                </div>
+                            </transition-group>
+                        </div>
+                        <form class="pb-4" method="POST" action="/products/{{ object.slug }}/context" @submit="submitForm" id="generateForm" ref="form">
+                            <div class="d-flex flex-wrap pt-1">
+                                {% csrf_token %}
+                                <div v-if="isLastStep==step && isMobile()">
+                                    <button class="btn btn-primary btn-block px-5" type="submit"><i class="mr-2" data-feather="shopping-cart"></i>{% if portrait_data %}Update Design{% else %}Generate Preview{% endif %}</button>
+                                </div>
+                                <div v-if="!isMobile()">
+                                    <button class="btn btn-primary btn-block px-5" type="submit"><i class="mr-2" data-feather="shopping-cart"></i>{% if portrait_data %}Update Design{% else %}Generate Preview{% endif %}</button>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-center"><small><a class="btn btn-sm btn-outline-info"  @click="editting=false" v-if="stored_data">Go back to selecting quantity →</a></small></div>
+                            <input name="json" :value="inputJSON" type="hidden"/>
+                        </form>
+                    </div>
+
+                </div>
+                <div class="card p-3 mb-3" v-if="stored_data && !editting">
+                    {% if portrait_data %}
+
+                    <h2>{% if object.first_one_free %}FREE {% endif %}{{ object.name }}</h2>
+                <p><span style="margin-right: 5px;text-decoration: line-through;color: #666;">{% if object.was_price and object.was_price > object.price %}({{ object|currency_was_string:currency }}){% endif %}</span><span style="font-weight: 900;">{% if object.first_one_free %}{{ 0.00|format_currency_string:currency }}{% else %}{{ object.price|format_currency_string:currency }}{% endif %}</span></p>
+                    {% if object.star_count %}<p><svg xmlns="http://www.w3.org/2000/svg" id="color" enable-background="new 0 0 24 24" height="15" viewBox="0 0 24 24" width="15"><path d="m23.363 8.584-7.378-1.127-3.307-7.044c-.247-.526-1.11-.526-1.357 0l-3.306 7.044-7.378 1.127c-.606.093-.848.83-.423 1.265l5.36 5.494-1.267 7.767c-.101.617.558 1.08 1.103.777l6.59-3.642 6.59 3.643c.54.3 1.205-.154 1.103-.777l-1.267-7.767 5.36-5.494c.425-.436.182-1.173-.423-1.266z" fill="#ffc107"/></svg><svg xmlns="http://www.w3.org/2000/svg" id="color" enable-background="new 0 0 24 24" height="15" viewBox="0 0 24 24" width="15"><path d="m23.363 8.584-7.378-1.127-3.307-7.044c-.247-.526-1.11-.526-1.357 0l-3.306 7.044-7.378 1.127c-.606.093-.848.83-.423 1.265l5.36 5.494-1.267 7.767c-.101.617.558 1.08 1.103.777l6.59-3.642 6.59 3.643c.54.3 1.205-.154 1.103-.777l-1.267-7.767 5.36-5.494c.425-.436.182-1.173-.423-1.266z" fill="#ffc107"/></svg><svg xmlns="http://www.w3.org/2000/svg" id="color" enable-background="new 0 0 24 24" height="15" viewBox="0 0 24 24" width="15"><path d="m23.363 8.584-7.378-1.127-3.307-7.044c-.247-.526-1.11-.526-1.357 0l-3.306 7.044-7.378 1.127c-.606.093-.848.83-.423 1.265l5.36 5.494-1.267 7.767c-.101.617.558 1.08 1.103.777l6.59-3.642 6.59 3.643c.54.3 1.205-.154 1.103-.777l-1.267-7.767 5.36-5.494c.425-.436.182-1.173-.423-1.266z" fill="#ffc107"/></svg><svg xmlns="http://www.w3.org/2000/svg" id="color" enable-background="new 0 0 24 24" height="15" viewBox="0 0 24 24" width="15"><path d="m23.363 8.584-7.378-1.127-3.307-7.044c-.247-.526-1.11-.526-1.357 0l-3.306 7.044-7.378 1.127c-.606.093-.848.83-.423 1.265l5.36 5.494-1.267 7.767c-.101.617.558 1.08 1.103.777l6.59-3.642 6.59 3.643c.54.3 1.205-.154 1.103-.777l-1.267-7.767 5.36-5.494c.425-.436.182-1.173-.423-1.266z" fill="#ffc107"/></svg><svg xmlns="http://www.w3.org/2000/svg" id="color" enable-background="new 0 0 24 24" height="15" viewBox="0 0 24 24" width="15"><path d="m23.363 8.584-7.378-1.127-3.307-7.044c-.247-.526-1.11-.526-1.357 0l-3.306 7.044-7.378 1.127c-.606.093-.848.83-.423 1.265l5.36 5.494-1.267 7.767c-.101.617.558 1.08 1.103.777l6.59-3.642 6.59 3.643c.54.3 1.205-.154 1.103-.777l-1.267-7.767 5.36-5.494c.425-.436.182-1.173-.423-1.266z" fill="#ffc107"/></svg>
+                        {{ object.star_count }} <small>({{ object.review_count }} Reviews)</small></p>{% endif %}
+                    <p>
+                        {{ object.description|safe }}
+
+                        <form class="pb-4" method="POST" action="/products/{{ object.slug }}"  >
+                            <div class="align-items-center pt-1">
+                                {% csrf_token %}
+                                <div class="row">
+                                    {% if product.has_variants %}
+                                        <div class="form-group mb-1 col-9">
+                                            <label>How do you want it?</label>
+                                            <select class="form-control custom-select" id="select-inputs" name="print">
+                                                <option> Digital Printable Bundle (Instant)</option>
+                                                <option> 5" x 7" Frame</option>
+                                                <option> Input</option>
+                                                <option >Input</option>
+                                                <option >Input</option>
+                                            </select>
+                                        </div>
+
+
+                                    {% endif %}
+                                    <div class="form-group mb-1 col-{% if not product.has_variants %}3{% else %}3{% endif %}">
+                                        <label>Quantity</label>
+                                        <input type="text" class="form-control" placeholder="1" value="1" name="qty"/>
+                                    </div>
+
+                                    {% if product.nyop %}
+
+                                        <div class="form-group mb-1 col-9">
+                                            <label>Name Your Own Price</label>
+                                            <div class="input-group"><div class="input-group-prepend"><span class="input-group-text"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span></div><input type="number"  step="0.01" class="form-control"  min="1" name="cpricing" placeholder="Enter a Price" required/></div>
+                                        </div>
+
+                                    {% endif %}
+                                    <div class="col-9" style="margin-top:32px;">
+                                        <input type="hidden" name="portrait_data" value="{{ portrait_data.id }}"/>
+                                        <button class="btn btn-primary btn-block px-5 mr-2" type="submit"><i class="mr-2" data-feather="shopping-cart"></i>Add to Cart</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <input name="json" :value="inputJSON" type="hidden"/>
+
+                        </form>
+
+
+                        <div class="mt-3"><small><a class="btn btn-sm btn-outline-info" @click="editting=true">← Click to go back to editting your design</a></small></div>
+                    {% endif %}
+                </div>
+                <!-- Product panels-->
+
+
+
+            </div>
+        </div>
+    </div>
+    <div class="modal" tabindex="-1" role="dialog" id="modalSmall" data-keyboard="false" data-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{% if stored_date %}Updating{% else %}Creating{% endif %} Your Customization</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" :style="'width: '+percent+'%'" ></div>
+                    </div>
+                    <div class="list-group">
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 0" :class="[(percent > 10) ? 'active':  'disabled']" >Preparing Your Custom Product</a>
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 10" :class="[(percent > 20)? 'active':  'disabled']" >Grabbing the Necessary Supplies</a>
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 20" :class="[(percent > 30)? 'active':   'disabled']" >Putting together your Custom Made Product</a>
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 30" :class="[(percent > 30)? 'active':   'disabled']" >Preparing for Pictures</a>
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 40" :class="[(percent > 40)? 'active':   'disabled']" >Calling the Photographer</a>
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 50" :class="[(percent > 50)? 'active':   'disabled']" >Uploading the Pictures to the Server</a>
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 60" :class="[(percent > 60)? 'active':   'disabled']" >Sending to the Dark Room</a>
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 70" :class="[(percent > 70)? 'active':   'disabled']" >Waiting for it to develop...</a>
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 80" :class="[(percent > 80)? 'active':   'disabled']" >Doing the Finishing Touches</a>
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 90" :class="[(percent > 90)? 'active':   'disabled']" >All Set and just one more step.</a>
+                        <a href="#" class="list-group-item list-group-item-action" v-if="percent > 95" :class="[(percent > 100)? 'active':   'disabled']" >Downloading the files....</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block vue %}
+
+    <script src="{% static 'js/jscolor.js' %}"></script>
+    <script>
+        window.onpageshow = function(event) {
+            if (event.persisted) {
+                vm.$forceUpdate();
+
+            }
+
+        };
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/babel-polyfill/dist/polyfill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue-croppa@1.3.7/dist/vue-croppa.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@1.1.6/dist/vuetify.min.js"></script>
+
+    <script>
+        Vue.use(Croppa)
+        Vue.use(VeeValidate);
+        var app = new Vue({
+            el: '#app',
+            delimiters: ['[[', ']]'],
+            data() {    return {
+                myCroppa: {},
+                dataUrl: null,
+                imageNotSelected: true,
+                sliderVal: 0,
+                step: '0|0',
+                sliderMin: 0,
+                sliderMax: 0,
+                canvasSize: 600,
+                percent: 0,
+                editting: {% if portrait_data %}false{% else %}true{% endif %},
+                background: '',
+                color: '',
+                preload: {% if preload %}{{ preload|safe }}{% else %}''{% endif %},
+                initial: null,
+                question_set: {{ object.get_json_questions|safe }},
+                stored_data: {% if portrait_data %}{{ portrait_data.stored_data|safe }}{% else %}''{% endif %},
+            }
+            },
+            mounted: function(){
+                if (this.stored_data) {
+                    if ("color" in this.stored_data){
+                        this.color = this.stored_data['color']
+                        $('#txtclor').attr('color',this.color.replace('\(','').replace('\)','').replace(' ',''))
+
+                    }
+                    if ("background" in this.stored_data){
+                        this.background = this.stored_data['background']
+                        $('#bgcolor').attr('color',this.background.replace('\(','').replace('\)','').replace(' ',''))
+                    }
+                    for (var key in this.question_set) {
+
+                        for (value in this.question_set[key]["attributes"]){
+
+                            this.question_set[key]["attributes"][value]["answer"] = this.stored_data[key]["attributes"][value]
+
+                            if ("answers" in this.question_set[key]["attributes"][value]) {
+
+                                for (selector in this.question_set[key]["attributes"][value]["answers"]){
+                                    results = this.question_set[key]["attributes"][value]["answers"][selector]
+                                    if ("answers" in results){
+                                        if (this.stored_data[key]["attributes"][value] in
+                                            this.question_set[key]["attributes"][value]["answers"][selector]["answers"]
+                                        ) {
+                                            this.question_set[key]["attributes"][value]["selection"] = this.question_set[key]["attributes"][value]["answers"][selector]
+                                        }
+                                        else {}
+                                    }
+
+                                }
+                            }
+                            if (this.question_set[key]["attributes"][value]["type"] == "C") {
+                                console.log('yes')
+                                Vue.set(this, 'initial', "/pdo/"+ this.stored_data[key]["attributes"][value])
+
+                            }
+                        }
+                    }
+                }
+                if (this.preload) {
+                    console.log('yes')
+                    for (var k in this.question_set) {
+                        console.log(k)
+                        if (k in this.preload) {
+                            console.log('true')
+                            for (v in this.question_set[k]["attributes"]) {
+                                console.log(v)
+                                if (v in this.preload[k]["attributes"]) {
+                                    console.log('found')
+                                    this.question_set[k]["attributes"][v]["answer"] = this.preload[k]["attributes"][v]
+                                    this.question_set[k]["attributes"][v]["preload"] = true;
+                                }
+                                else {
+                                    this.question_set[k]["attributes"][v]["preload"] = false;
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+
+            methods: {
+                confirmLastStep(parent, value) {
+                    steps = parent + '|' + value
+                    console.log(steps, this.isLastStep)
+                    return steps == this.isLastStep
+                },
+                showSaveButton(value, count, counts){
+                    if (!this.isMobile()){return false}
+                    if (!value){return false}
+                    else {
+                        return (this.step == this.isLastStep) || (!this.isMobile())
+
+                    }
+                },
+                stepParent(value) {
+                    parent = this.step.split('|')[0]
+                    return (parent == value) || (!this.isMobile())
+                },
+                getStep(parent, value){
+                    x = this.step.split('|')
+                    return ((parent == x[0]) && (value == x[1])) || (!this.isMobile())
+                },
+                getNextStep(parent, value, validate){
+
+                    this.$nextTick(function () {
+                        if (validate != 'false'){
+
+                            this.$validator.validateAll().then((result) => {
+                                if (result) {
+                                    parent_list = Object.keys(this.question_set)
+                                    step_list = Object.keys(this.question_set[parent_list[parent]]["attributes"])
+                                    if (value == step_list.length - 1) {
+                                        this.getNextParent(parent)
+                                    }
+                                    else {
+                                        steps = this.step.split('|')
+                                        this.step = steps[0] + '|' + (parseInt(value) + 1)
+                                    }
+                                }
+                            }).catch((result) =>{console.log(result)})
+                        } else {
+                            parent_list = Object.keys(this.question_set)
+                            step_list = Object.keys(this.question_set[parent_list[parent]]["attributes"])
+                            if (value == step_list.length-1){
+                                this.getNextParent(parent)
+                            }
+                            else{
+                                steps = this.step.split('|')
+                                this.step = steps[0]+'|'+(parseInt(value)+1)
+                            }
+                        }
+
+                    })
+                    document.getElementById("question_top").scrollIntoView();
+
+
+
+                },
+
+                loader(){
+                    this.percent += 10;
+                    console.log(this.percent)
+                },
+                getNextParent(parent) {
+                    parent_list = Object.keys(this.question_set)
+                    if (parent == parent_list.length-1) {
+                        console.log(this.inputJSON)
+                        this.$nextTick(function () {
+                            if (this.isMobile()){
+                                $('#modalSmall').modal('show');
+                                this.percent = 0;
+                                console.log('a')
+                                setTimeout(() => { this.loader(); }, 300);
+                                setTimeout(() => { this.loader(); }, 400);
+                                setTimeout(() => { this.loader(); }, 700);
+                                setTimeout(() => { this.loader(); }, 1000);
+                                setTimeout(() => { this.loader(); }, 8000);
+                                setTimeout(() => { this.loader(); }, 10000);
+                                setTimeout(() => { this.loader(); }, 13000);
+                                setTimeout(() => { this.loader(); }, 16000);
+                                setTimeout(() => { this.loader(); }, 18000);
+                                setTimeout(() => { this.loader(); }, 20000);
+                                this.$refs.form.submit()
+                            }
+
+                        });
+
+                    } else {
+                        steps = this.step.split('|')
+                        this.step = (parseInt(parent)+1)+'|'+0
+                    }
+                },
+                isMobile() {
+                    if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                        return true
+                    } else {
+                        return false
+                    }
+                },
+                onSliderChange(evt) {
+                    var increment = evt.target.value
+                    this.myCroppa.scaleRatio = +increment
+                },
+                setPicture(key){
+                    Vue.set(key, 'answer', this.dataUrl)
+                },
+                submitForm: function(e) {
+                    $('#modalSmall').modal('show');
+                    this.percent = 0;
+                    setTimeout(() => { this.loader(); }, 300);
+                    setTimeout(() => { this.loader(); }, 400);
+                    setTimeout(() => { this.loader(); }, 700);
+                    setTimeout(() => { this.loader(); }, 1000);
+                    setTimeout(() => { this.loader(); }, 8000);
+                    setTimeout(() => { this.loader(); }, 10000);
+                    setTimeout(() => { this.loader(); }, 13000);
+                    setTimeout(() => { this.loader(); }, 16000);
+                    setTimeout(() => { this.loader(); }, 18000);
+                    setTimeout(() => { this.loader(); }, 20000);
+                    this.$validator.validateAll().then((result) => {
+                        if (result) {
+                            if (!this.imageNotSelected){
+                                this.imageSaving = true
+                                this.croppaImageMetaData = this.myCroppa.getMetadata()
+                                let ctx = this.myCroppa.getContext()
+                                ctx.clearRect(0, 0, 600, 600);
+                                ctx.drawImage(this.myCroppa.img, 0, 0, 600, 600)
+                                this.dataUrl = this.myCroppa.generateDataUrl()
+                                $('#picture').val(this.dataUrl);
+                                $("#picture").trigger("change");
+                                this.myCroppa.applyMetadata(this.croppaImageMetaData)
+
+                            }
+                        }
+                    }).catch(()=>{
+                        console.log('false')
+                        $('#modalSmall').modal('hide')
+                        e.preventDefault();
+                    })
+
+
+
+                },
+                onZoom() {
+                    // To prevent zooming out of range when using scrolling to zoom
+                    // if (this.sliderMax && this.croppa.scaleRatio >= this.sliderMax) {
+                    //   this.croppa.scaleRatio = this.sliderMax
+                    // } else if (this.sliderMin && this.croppa.scaleRatio <= this.sliderMin) {
+                    //   this.croppa.scaleRatio = this.sliderMin
+                    // }
+
+                    this.sliderVal = this.myCroppa.scaleRatio
+                },
+                updateBg: function(color){
+                    this.background = color;
+                },
+                updateColor: function(color){
+
+                    this.color = color;
+                },
+                setImage: function(obj) {
+                    obj = this.dataUrl
+                },
+                saveCroppedImage() {
+                    this.imageSaving = true
+                    this.croppaImageMetaData = this.myCroppa.getMetadata()
+                    let ctx = this.myCroppa.getContext()
+                    ctx.clearRect(0, 0, 600, 600);
+                    this.dataUrl = this.myCroppa.generateDataUrl()
+                    $('#picture').val(this.dataUrl);
+                    $("#picture").trigger("change");
+                    this.imageSaving = false; //this generates the dataUrl for this demo, right side 'saved' result
+                    ctx.drawImage(this.myCroppa.img, 0, 0, 600, 600)
+                    //ctx.restore()
+                    this.myCroppa.applyMetadata(this.croppaImageMetaData)
+
+                },
+                onNewImageDrawn() {
+                    this.imageNotSelected = false
+                    this.sliderVal = this.myCroppa.scaleRatio
+                    this.sliderMin = this.myCroppa.scaleRatio / 2
+                    this.sliderMax = this.myCroppa.scaleRatio * 2
+                },
+                handleFileSizeExceed() {
+                    this.imageNotSelected = true
+                },
+                handleFileTypeMismatch() {
+                    this.imageNotSelected = true
+                },
+                selectNewImage() {
+                    this.myCroppa.remove()
+                    this.imageNotSelected = true
+                    this.myCroppa.chooseFile()
+
+                },
+                onDraw(ctx) {
+                    if (!this.imageSaving) {
+                        ctx.save()
+                        ctx.globalAlpha = 1.0
+                        // H
+                        ctx.beginPath()
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = "#ffffff"
+                        ctx.moveTo(0, this.canvasSize / 3)
+                        ctx.lineTo(this.canvasSize, this.canvasSize / 3)
+                        ctx.stroke();
+                        ctx.beginPath()
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = "#ffffff"
+                        ctx.moveTo(0, this.canvasSize / 1.5)
+                        ctx.lineTo(this.canvasSize, this.canvasSize / 1.5)
+                        ctx.stroke();
+                        // V
+                        ctx.beginPath()
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = "#ffffff"
+                        ctx.moveTo(this.canvasSize / 3, 0)
+                        ctx.lineTo(this.canvasSize / 3, this.canvasSize)
+                        ctx.stroke()
+                        ctx.beginPath()
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = "#ffffff"
+                        ctx.moveTo(this.canvasSize / 1.5, 0)
+                        ctx.lineTo(this.canvasSize / 1.5, this.canvasSize)
+                        ctx.stroke()
+                        // circle outline
+                        ctx.beginPath()
+                        ctx.globalAlpha = 1.0
+                        ctx.strokeStyle = "#ffffff";
+                        ctx.lineWidth = 10;
+                        ctx.arc(this.canvasSize / 2, this.canvasSize / 2, this.canvasSize / 5 * 2, 0, 2 * Math.PI, true)
+                        ctx.stroke()
+                        ctx.restore()
+                        //inverse circle fill
+                        ctx.save()
+                        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                        ctx.beginPath()
+                        ctx.arc(this.canvasSize / 2, this.canvasSize / 2, this.canvasSize / 5 * 2, 0, 2 * Math.PI)
+                        ctx.rect(this.canvasSize, 0, 0 - this.canvasSize, this.canvasSize)
+                        ctx.fill()
+                        ctx.closePath()
+                    }
+                    else {
+
+                        this.dataUrl = this.myCroppa.generateDataUrl()
+                        $('#picture').val(this.dataUrl);
+                        $("#picture").trigger("change");
+                        this.imageSaving = false; //this generates the dataUrl for this demo, right side 'saved' result
+                        this.onDraw(this.myCroppa.getContext())           // redraws the component with the overlay
+                    }
+                },
+            },
+            computed: {
+                isLastStep: function(){
+                    keys = Object.keys(this.question_set)
+
+                    questions = Object.keys(this.question_set[keys[keys.length-1]]["attributes"])
+
+                    return (keys.length-1)+'|'+(questions.length-1)
+                },
+                stripQuestionSet: function(){
+                    _this = this
+                    qs = {};
+                    obj_keys = Object.keys(this.question_set)
+                    for (item in obj_keys){
+                        attr = Object.keys(this.question_set[obj_keys[item]]["attributes"])
+                        qs[obj_keys[item]] = {"attributes":{}}
+                        for(answer in attr){
+                            qs[obj_keys[item]]["attributes"][attr[answer]] = this.question_set[obj_keys[item]]["attributes"][attr[answer]]["answer"]
+                        }
+                    }
+                    return qs
+                },
+                generateJSON: function(){
+                    return {
+                        "background": this.background.replace("rgb", ""),
+                        "color": this.color.replace("rgb", ""),
+                        ... this.stripQuestionSet
+                    }
+
+                },
+                inputJSON: function(){
+                    return JSON.stringify(this.generateJSON)
+                }
+            }
+        })
+
+
+    </script>
+    <script>
+        $(document).ready(function()
+        {
+            {% if product.text_color %}
+            document.getElementById('txtclor').jscolor.fromRGB(document.getElementById('txtclor').getAttribute('color').split(',')[0],document.getElementById('txtclor').getAttribute('color').split(',')[1],document.getElementById('txtclor').getAttribute('color').split(',')[2])
+            {% endif %}{% if product.bg_color %}
+            document.getElementById('bgcolor').jscolor.fromRGB(document.getElementById('bgcolor').getAttribute('color').split(',')[0],document.getElementById('bgcolor').getAttribute('color').split(',')[1],document.getElementById('bgcolor').getAttribute('color').split(',')[2])
+            {% endif %}
+        })
+
+    </script>
+
+    <script src="https://www.paypal.com/sdk/js?client-id={{ store.paypal_id }}&currency=USD&commit=false" async></script>
+
+{% endblock %}
+
