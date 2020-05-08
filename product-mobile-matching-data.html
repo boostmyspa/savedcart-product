@@ -285,7 +285,11 @@
                     this.$emit('crop', {
                         image: result,
                         params: {
-                            position: this.instance.position()
+                            position: this.instance.position(),
+                            viewport: {
+                                height: this.instance.options.viewport.height,
+                                width:  this.instance.options.viewport.width
+                            }
                         }
                     });
                     return result;
@@ -293,7 +297,7 @@
             }
         },
         mounted() {
-            this.instance = new Cropme(this.$el, {
+            const options = {
                 width:  300,
                 height: 300,
                 zoom: {
@@ -306,7 +310,18 @@
                     slider:   true,
                     position: 'left'
                 }
-            });
+            };
+            if (this.positionString) {
+                const viewportOptions = parseImageParams(this.positionString).viewport;
+                if (viewportOptions) {
+                    if (!options.viewport) options.viewport = {};
+    
+                    options.viewport.height = viewportOptions.height;
+                    options.viewport.width  = viewportOptions.width;
+                }
+            }
+            
+            this.instance = new Cropme(this.$el, options);
             this.instance.bind({
                 url:      this.image,
                 position: this.positionString ? parseImageParams(this.positionString).position : {}
