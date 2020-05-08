@@ -535,10 +535,10 @@
                     return false
                 }
             },
-            removeImageFromAnswer() {
-                keys.answer.original_image = null;
-                keys.answer.image          = null;
-                keys.answer.params         = null;
+            removeImageFromAnswer(answer) {
+                answer.original_image = null;
+                answer.image          = null;
+                answer.params         = null;
             },
             saveImageToAnswer(answer, result) {
                 answer.image  = result.image;
