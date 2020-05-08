@@ -6,6 +6,9 @@
     <title>
         Glamour Baby Boutique
     </title>
+    
+    <base href="https://glamourbabyboutique.com">
+    
     <!-- SEO Meta Tags-->
     <style type="text/css">
         .st0{fill: red !important;}
@@ -31,10 +34,6 @@
         }
     </style>
     <style>
-        .croppa-container {
-            box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
-        }
-
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.5rem;
@@ -174,36 +173,21 @@
                                         </div>
                                     </div>
                                     <div class="form-group mb-1" v-if="keys.type == 'C'">
-                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has(title)">This field is required</small></label>
+                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has('image-'+keys.question)">This field is required</small></label>
 
-                                        <croppa class="c1" v-model="myCroppa"
-                                                :width="300"
-                                                :height="300"
-                                                placeholder=""
-                                                :show-remove-button="true"
-                                                :initial-image="initial"
-                                                :accept="'image/*'"
-                                                :show-loading="true"
-                                                @new-image-drawn="onNewImageDrawn"
-                                                @file-size-exceed="handleFileSizeExceed"
-                                                @file-type-mismatch="handleFileTypeMismatch"
-                                                @draw="onDraw"
-                                                @zoom="onZoom"
-                                        >
-                                            <img slot="placeholder" src="https://glamourbabyboutique.com/static/img/taptoupload.png"/>
-                                        </croppa>
-                                        <div v-if="!imageNotSelected" class="d-none d-md-block">
-                                            <small>Adjust Zoom</small>
-                                            <input type="range" @input="onSliderChange" :min="sliderMin" :max="sliderMax" step=".001" v-model="sliderVal"  :name="title"  v-validate="'required'">
-
+                                        <div style="position: relative" v-if="keys.answer.original_image">
+                                            <cropme ref="cropme" :image="keys.answer.original_image" @crop="keys.answer.image = $event"></cropme>
+                                            <button type="button" @click="keys.answer.original_image = null" style="position: absolute; top: 0; right: 0; background: none; border: none">
+                                                <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="30" height="30" class="icon icon-remove" style="top: -7.5px; right: -7.5px;"><path d="M511.921231 0C229.179077 0 0 229.257846 0 512 0 794.702769 229.179077 1024 511.921231 1024 794.781538 1024 1024 794.702769 1024 512 1024 229.257846 794.781538 0 511.921231 0ZM732.041846 650.633846 650.515692 732.081231C650.515692 732.081231 521.491692 593.683692 511.881846 593.683692 502.429538 593.683692 373.366154 732.081231 373.366154 732.081231L291.761231 650.633846C291.761231 650.633846 430.316308 523.500308 430.316308 512.196923 430.316308 500.696615 291.761231 373.523692 291.761231 373.523692L373.366154 291.918769C373.366154 291.918769 503.453538 430.395077 511.881846 430.395077 520.349538 430.395077 650.515692 291.918769 650.515692 291.918769L732.041846 373.523692C732.041846 373.523692 593.447385 502.547692 593.447385 512.196923 593.447385 521.412923 732.041846 650.633846 732.041846 650.633846Z" fill="red"></path></svg>
+                                            </button>
                                         </div>
-
-                                        <input name="base64" id="picture" type="hidden" :value="dataUrl" v-bind:change="setPicture(keys)"/>
+                                        <input-image default-img="https://glamourbabyboutique.com/static/img/taptoupload.png" v-model="keys.answer.original_image" v-else></input-image>
+                                        <input type="hidden" :name="'image-'+keys.question" v-model="keys.answer.original_image" v-validate="'required'">
                                     </div>
                                 </div>
                             </transition-group>
                         </div>
-                        <form class="pb-4" method="POST" action="#" @submit="submitForm" id="generateForm" ref="form">
+                        <form ref="form" class="pb-4" method="POST" action="#" @submit="submitForm($event, 'prevent')" id="generateForm" ref="form">
                             <div class="d-flex flex-wrap pt-1">
                                 <div v-if="isLastStep==step && isMobile()">
                                     <button class="btn btn-primary btn-block px-5" type="submit"><i class="mr-2" data-feather="shopping-cart"></i>Update</button>
@@ -264,47 +248,131 @@
 </body>
 </html>
 <script>
-    {# I have used to force the form clear, doesn't really work #}
+    // {# I have used to force the form clear, doesn't really work #}
     window.onpageshow = function(event) {
         if (event.persisted) {
             vm.$forceUpdate();
-
         }
-
     };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/babel-polyfill/dist/polyfill.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-<script src="https://unpkg.com/vue-croppa@1.3.7/dist/vue-croppa.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@1.1.6/dist/vuetify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/boostmyspa/cropme@handles/dist/cropme.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/boostmyspa/cropme@handles/dist/cropme.min.css">
 <script>
-    Vue.use(Croppa)
+    function generateUID() {
+        return Math.ceil(Math.random() * Number.MAX_SAFE_INTEGER).toString(36);
+    }
+
     Vue.use(VeeValidate);
+    Vue.component('cropme', {
+        template: `<div></div>`,
+        props: ['image'],
+        data() {
+            return {
+                instance: null
+            };
+        },
+        methods: {
+            crop(options) {
+                return this.instance.crop(options || {type: 'base64'}).then(result => {
+                    this.$emit('crop', result);
+                    return result;
+                });
+            }
+        },
+        mounted() {
+            this.instance = new Cropme(this.$el, {
+                width:  300,
+                height: 300,
+                zoom: {
+                    enable:     true,
+                    mouseWheel: true,
+                    slider:     true
+                },
+                rotation: {
+                    enable:   true,
+                    slider:   true,
+                    position: 'left'
+                }
+            });
+            this.instance.bind({url: this.image});
+        }
+    });
+    Vue.component('input-image', {
+        template: `
+            <div :class="{active: isDragging || isProcessing}">
+                <label :for="id" style="position: relative">
+                    <div>
+                        <img :src="value || defaultImg">
+                    </div>
+                    <div @dragenter="isDragging = true" @dragleave="isDragging = false"
+                         @dragover.prevent @drop.prevent="handleDnD"
+                        style="position: absolute; top: 0; right: 0; bottom: 0; left: 0; cursor: pointer">
+                    </div>
+                </label>
+                <input type="file" :id="id" ref="file" @change="handleInput" style="display: none">
+            </div>
+        `,
+        props: ['value', 'defaultImg'],
+        data() {
+            return {
+                isDragging:   false,
+                isProcessing: false
+            };
+        },
+        computed: {
+            id() {
+                return 'input-image-' + generateUID();
+            }
+        },
+        methods: {
+            handleDnD(ev) {
+                if (ev.dataTransfer.items) {
+                    const item = ev.dataTransfer.items[0];
+                    if (item.kind !== 'file') return;
+                
+                    this.process(item.getAsFile());
+                } else {
+                    const file = ev.dataTransfer.files[0];
+                    this.process(file);
+                }
+                this.isDragging = false;
+            },
+            handleInput() {
+                const file = this.$refs.file.files[0];
+                if (!file) return;
+            
+                this.process(file);
+            },
+            process(file) {
+                var reader = new FileReader();
+                reader.addEventListener('load', () => {
+                    this.$emit('input', reader.result);
+                });
+                reader.readAsDataURL(file);
+            }
+        }
+    });
     var app = new Vue({
         el: '#app',
         delimiters: ['[[', ']]'],
         data() { return {
-            myCroppa: {},
-            dataUrl: null,
-            imageNotSelected: true,
-            sliderVal: 0,
             step: '0|0',
-            sliderMin: 0,
             custom_1: 'S',
             custom_2: 'NB',
             custom_3: 'NB',
             custom_4: 'S',
             custom_5: 'NB',
-            sliderMax: 0,
-            canvasSize: 600,
             percent: 0,
             editting: true,
             background: '',
             color: '',
             preload: '',
             initial: null,
-            question_set: {"MugCreator": {"name": "MugCreator", "attributes": {"Upload a Picture": {"question": "Upload a Picture", "answer": "", "type": "C"}, "Select a Style": {"answers": {"147": {"title": "1", "image": "/media/processing/mug-testing_Y6wdZPv.png"}}, "question": "Select a Style", "answer": "", "selection": "", "type": "I"}}}},
-            stored_data: '',
+            question_set: {"MugCreator": {"name": "MugCreator", "attributes": {"Upload a Picture": {"question": "Upload a Picture", "answer": {"original_image": "", "image": ""}, "type": "C"}, "Select a Style": {"answers": {"147": {"title": "1", "image": "/media/processing/mug-testing_Y6wdZPv.png"}}, "question": "Select a Style", "answer": "", "selection": "", "type": "I"}}}},
+            stored_data: ''
         }
 
         },
@@ -313,20 +381,16 @@
                 if ("color" in this.stored_data){
                     this.color = this.stored_data['color']
                     $('#txtclor').attr('color',this.color.replace('\(','').replace('\)','').replace(' ',''))
-
                 }
                 if ("background" in this.stored_data){
                     this.background = this.stored_data['background']
                     $('#bgcolor').attr('color',this.background.replace('\(','').replace('\)','').replace(' ',''))
                 }
                 for (var key in this.question_set) {
-
                     for (value in this.question_set[key]["attributes"]){
-
                         this.question_set[key]["attributes"][value]["answer"] = this.stored_data[key]["attributes"][value]
 
                         if ("answers" in this.question_set[key]["attributes"][value]) {
-
                             for (selector in this.question_set[key]["attributes"][value]["answers"]){
                                 results = this.question_set[key]["attributes"][value]["answers"][selector]
                                 if ("answers" in results){
@@ -337,13 +401,11 @@
                                     }
                                     else {}
                                 }
-
                             }
                         }
                         if (this.question_set[key]["attributes"][value]["type"] == "C") {
                             console.log('yes')
                             Vue.set(this, 'initial', "/pdo/"+ this.stored_data[key]["attributes"][value])
-
                         }
                     }
                 }
@@ -381,7 +443,6 @@
                 if (!value){return false}
                 else {
                     return (this.step == this.isLastStep) || (!this.isMobile())
-
                 }
             },
             stepParent(value) {
@@ -393,10 +454,8 @@
                 return ((parent == x[0]) && (value == x[1])) || (!this.isMobile())
             },
             getNextStep(parent, value, validate){
-
                 this.$nextTick(function () {
                     if (validate != 'false'){
-
                         this.$validator.validateAll().then((result) => {
                             if (result) {
                                 parent_list = Object.keys(this.question_set)
@@ -421,12 +480,8 @@
                             this.step = steps[0]+'|'+(parseInt(value)+1)
                         }
                     }
-
                 })
                 document.getElementById("question_top").scrollIntoView();
-
-
-
             },
 
             loader(){
@@ -454,9 +509,7 @@
                             setTimeout(() => { this.loader(); }, 20000);
                             this.$refs.form.submit()
                         }
-
                     });
-
                 } else {
                     steps = this.step.split('|')
                     this.step = (parseInt(parent)+1)+'|'+0
@@ -469,14 +522,9 @@
                     return false
                 }
             },
-            onSliderChange(evt) {
-                var increment = evt.target.value
-                this.myCroppa.scaleRatio = +increment
-            },
-            setPicture(key){
-                Vue.set(key, 'answer', this.dataUrl)
-            },
-            submitForm: function(e) {
+            submitForm: async function(e, prevent) {
+                if (prevent) e.preventDefault();
+                
                 $('#modalSmall').modal('show');
                 this.percent = 0;
                 setTimeout(() => { this.loader(); }, 300);
@@ -489,138 +537,23 @@
                 setTimeout(() => { this.loader(); }, 16000);
                 setTimeout(() => { this.loader(); }, 18000);
                 setTimeout(() => { this.loader(); }, 20000);
-                this.$validator.validateAll().then((result) => {
-                    if (result) {
-                        if (!this.imageNotSelected){
-                            this.imageSaving = true
-                            this.croppaImageMetaData = this.myCroppa.getMetadata()
-                            let ctx = this.myCroppa.getContext()
-                            ctx.clearRect(0, 0, 600, 600);
-                            ctx.drawImage(this.myCroppa.img, 0, 0, 600, 600)
-                            this.dataUrl = this.myCroppa.generateDataUrl()
-                            $('#picture').val(this.dataUrl);
-                            $("#picture").trigger("change");
-                            this.myCroppa.applyMetadata(this.croppaImageMetaData)
-
-                        }
+                
+                try {
+                    if (await this.$validator.validateAll()) {
+                        await this.$refs.cropme[0].crop();
+                        this.$refs.form.submit();
                     }
-                }).catch(()=>{
+                } catch (_) {
                     console.log('false')
                     $('#modalSmall').modal('hide')
-                    e.preventDefault();
-                })
-
-
-
-            },
-            onZoom() {
-                // To prevent zooming out of range when using scrolling to zoom
-                // if (this.sliderMax && this.croppa.scaleRatio >= this.sliderMax) {
-                //   this.croppa.scaleRatio = this.sliderMax
-                // } else if (this.sliderMin && this.croppa.scaleRatio <= this.sliderMin) {
-                //   this.croppa.scaleRatio = this.sliderMin
-                // }
-
-                this.sliderVal = this.myCroppa.scaleRatio
+                }
             },
             updateBg: function(color){
                 this.background = color;
             },
             updateColor: function(color){
-
                 this.color = color;
-            },
-            setImage: function(obj) {
-                obj = this.dataUrl
-            },
-            saveCroppedImage() {
-                this.imageSaving = true
-                this.croppaImageMetaData = this.myCroppa.getMetadata()
-                let ctx = this.myCroppa.getContext()
-                ctx.clearRect(0, 0, 600, 600);
-                this.dataUrl = this.myCroppa.generateDataUrl()
-                $('#picture').val(this.dataUrl);
-                $("#picture").trigger("change");
-                this.imageSaving = false; //this generates the dataUrl for this demo, right side 'saved' result
-                ctx.drawImage(this.myCroppa.img, 0, 0, 600, 600)
-                //ctx.restore()
-                this.myCroppa.applyMetadata(this.croppaImageMetaData)
-
-            },
-            onNewImageDrawn() {
-                this.imageNotSelected = false
-                this.sliderVal = this.myCroppa.scaleRatio
-                this.sliderMin = this.myCroppa.scaleRatio / 2
-                this.sliderMax = this.myCroppa.scaleRatio * 2
-            },
-            handleFileSizeExceed() {
-                this.imageNotSelected = true
-            },
-            handleFileTypeMismatch() {
-                this.imageNotSelected = true
-            },
-            selectNewImage() {
-                this.myCroppa.remove()
-                this.imageNotSelected = true
-                this.myCroppa.chooseFile()
-
-            },
-            onDraw(ctx) {
-                if (!this.imageSaving) {
-                    ctx.save()
-                    ctx.globalAlpha = 1.0
-                    // H
-                    ctx.beginPath()
-                    ctx.lineWidth = 1;
-                    ctx.strokeStyle = "#ffffff"
-                    ctx.moveTo(0, this.canvasSize / 3)
-                    ctx.lineTo(this.canvasSize, this.canvasSize / 3)
-                    ctx.stroke();
-                    ctx.beginPath()
-                    ctx.lineWidth = 1;
-                    ctx.strokeStyle = "#ffffff"
-                    ctx.moveTo(0, this.canvasSize / 1.5)
-                    ctx.lineTo(this.canvasSize, this.canvasSize / 1.5)
-                    ctx.stroke();
-                    // V
-                    ctx.beginPath()
-                    ctx.lineWidth = 1;
-                    ctx.strokeStyle = "#ffffff"
-                    ctx.moveTo(this.canvasSize / 3, 0)
-                    ctx.lineTo(this.canvasSize / 3, this.canvasSize)
-                    ctx.stroke()
-                    ctx.beginPath()
-                    ctx.lineWidth = 1;
-                    ctx.strokeStyle = "#ffffff"
-                    ctx.moveTo(this.canvasSize / 1.5, 0)
-                    ctx.lineTo(this.canvasSize / 1.5, this.canvasSize)
-                    ctx.stroke()
-                    // circle outline
-                    ctx.beginPath()
-                    ctx.globalAlpha = 1.0
-                    ctx.strokeStyle = "#ffffff";
-                    ctx.lineWidth = 10;
-                    ctx.arc(this.canvasSize / 2, this.canvasSize / 2, this.canvasSize / 5 * 2, 0, 2 * Math.PI, true)
-                    ctx.stroke()
-                    ctx.restore()
-                    //inverse circle fill
-                    ctx.save()
-                    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-                    ctx.beginPath()
-                    ctx.arc(this.canvasSize / 2, this.canvasSize / 2, this.canvasSize / 5 * 2, 0, 2 * Math.PI)
-                    ctx.rect(this.canvasSize, 0, 0 - this.canvasSize, this.canvasSize)
-                    ctx.fill()
-                    ctx.closePath()
-                }
-                else {
-
-                    this.dataUrl = this.myCroppa.generateDataUrl()
-                    $('#picture').val(this.dataUrl);
-                    $("#picture").trigger("change");
-                    this.imageSaving = false; //this generates the dataUrl for this demo, right side 'saved' result
-                    this.onDraw(this.myCroppa.getContext())           // redraws the component with the overlay
-                }
-            },
+            }
         },
         computed: {
             isLastStep: function(){
@@ -649,13 +582,11 @@
                     "color": this.color.replace("rgb", ""),
                     ... this.stripQuestionSet
                 }
-
             },
             inputJSON: function(){
                 return JSON.stringify(this.generateJSON)
             }
         }
     })
-
 
 </script>
