@@ -24,6 +24,10 @@
     <link rel="stylesheet" media="screen" id="main-styles" href="https://glamourbabyboutique.com/static/store/css/skins/theme-38b3a2-rounded.min.css">
 
     <style>
+        [v-cloak] {
+            display: none;
+        }
+        
         .fade-enter-active, .fade-leave-active {
             transition: opacity .2s;
         }
@@ -94,112 +98,162 @@
 
                     <h3>Let's Create Your Personalized Matching Set</h3>
 
-                    <div id="question_top">
-                        <div v-for="question, answer, count in question_set">
-                            <h6 class="mt-3" v-if="stepParent(count)">[[ question.name ]] </h6>
-                            <transition-group  name="fade" tag="div" mode="out-in">
-                                <div v-for="keys, title, counts in question.attributes" v-if="getStep(count, counts)" :key="title">
-                                    <div class="form-group mb-1" v-if="keys.type == 'T'">
-                                        <label class="d-block">[[ keys.question ]] (Max 20 Letters) <small style="display:block;color:red;" class="error" v-if="errors.has(title)">This field is required</small></label>
-                                        <input type="text" class="form-control" v-model="keys.answer"  :name="title"  v-validate="'required'" maxlength="20"/>
-                                        <button class="btn btn-primary btn-block px-5 mr-2 mt-3" @click="getNextStep(count, counts, title)" v-if="isMobile() && isLastStep!=step"><i class="mr-2" data-feather="shopping-cart"></i>Next Step</button>
-
-                                    </div>
-                                    <div class="form-group mb-1" v-if="keys.type == 'R'">
-                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has(title)">This field is required</small></label>
-                                        <div class="custom-control custom-option custom-control-inline mb-2" v-for="answer, index in keys.answers">
-                                            <input class="custom-control-input" type="radio" :name="title" v-model="keys.answer" v-validate="'required'"  v-bind:value="index"  :id="title+'-'+index" @change="getNextStep(count, counts, 'false')">
-                                            <label class="custom-option-label" :for="title+'-'+index" style="background:white;  ">
-                                                <span class="custom-option-color" v-bind:style="{ backgroundColor: answer.title }"></span></label>
+                    <div id="question_top" v-cloak>
+                        <div v-for="(grouping, grName, grIndex) in question_set" :key="grName">
+                            <h6 class="mt-3" v-if="isGroupingShouldBeShown(grIndex)">[[ grouping.name ]]</h6>
+                            
+                            <transition-group name="fade" tag="div" mode="out-in">
+                                <div v-if="isQuestionShouldBeShown(grIndex, qIndex)" v-for="(question, qTitle, qIndex) in grouping.attributes" :key="qTitle">
+                                    <div class="form-group mb-1" v-if="question.type == 'C'">
+                                        <label class="d-block">
+                                            [[ question.question ]]
+                                            <small style="display:block;color:red;" class="error" v-if="errors.has('image-'+question.question)">This field is required</small>
+                                        </label>
+        
+                                        <div style="position: relative" v-if="question.answer.original_image">
+                                            <cropme ref="cropme" :image="question.answer.original_image" :position-string="question.answer.params" @crop="saveImageToAnswer(question.answer, $event)"></cropme>
+                                            
+                                            <button type="button" @click="removeImageFromAnswer(question.answer)" style="position: absolute; top: 0; right: 0; background: none; border: none">
+                                                <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="30" height="30" class="icon icon-remove" style="top: -7.5px; right: -7.5px;"><path d="M511.921231 0C229.179077 0 0 229.257846 0 512 0 794.702769 229.179077 1024 511.921231 1024 794.781538 1024 1024 794.702769 1024 512 1024 229.257846 794.781538 0 511.921231 0ZM732.041846 650.633846 650.515692 732.081231C650.515692 732.081231 521.491692 593.683692 511.881846 593.683692 502.429538 593.683692 373.366154 732.081231 373.366154 732.081231L291.761231 650.633846C291.761231 650.633846 430.316308 523.500308 430.316308 512.196923 430.316308 500.696615 291.761231 373.523692 291.761231 373.523692L373.366154 291.918769C373.366154 291.918769 503.453538 430.395077 511.881846 430.395077 520.349538 430.395077 650.515692 291.918769 650.515692 291.918769L732.041846 373.523692C732.041846 373.523692 593.447385 502.547692 593.447385 512.196923 593.447385 521.412923 732.041846 650.633846 732.041846 650.633846Z" fill="red"></path></svg>
+                                            </button>
                                         </div>
-                                        <button class="btn btn-primary btn-block px-5 mr-2 mt-3" @click="getNextStep(count, counts, title)" v-if="isMobile() && isLastStep!=step"><i class="mr-2" data-feather="shopping-cart"></i>Next Step</button>
+                                        <input-image default-img="https://glamourbabyboutique.com/static/img/taptoupload.png" v-model="question.answer.original_image" v-else></input-image>
+                                        <input type="hidden" :name="'image-'+question.question" v-model="question.answer.original_image" v-validate="'required'">
+                                        
+                                        <button class="btn btn-primary btn-block px-5 mr-2" @click="cropAndGoToNextQuestion" v-if="isSaveButtonShouldBeShown(question.answer.original_image)">
+                                            <i class="mr-2" data-feather="shopping-cart"></i>
+                                            Saved & Next Step
+                                        </button>
                                     </div>
-
-                                    <div class="form-group mb-1" v-if="keys.type == 'S'">
-                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has(title)">This field is required</small></label>
-                                        <select class="form-control custom-select" id="select-input" v-model="keys.answer">
-                                            <option v-for="answer, index in keys.answers" v-bind:value="index"  :name="title"  v-validate="'required'">[[ answer.title ]]</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group mb-1" v-if="keys.type == 'I'">
-                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has('selection-'+keys.question)">This field is required</small></label>
+    
+                                    <div class="form-group mb-1" v-else-if="question.type == 'I'">
+                                        <label class="d-block">
+                                            [[ question.question ]]
+                                            <small style="display:block;color:red;" class="error" v-if="errors.has('selection-'+question.question)">This field is required</small>
+                                        </label>
+                                        
                                         <div class="radio-tile-group" style="justify-content: left;">
-                                            <div class="input-container" v-for="answer, index in keys.answers">
-                                                <input id="walk" class="radio-button"  type="radio" :value="index" v-model="keys.answer" :name="'selection-'+keys.question"   v-validate="'required'"  @change="getNextStep(count, counts, 'false')"/>
-                                                <div class="radio-tile">
-                                                    <img :src="answer.image" style="max-width:95%;height:auto;margin:auto"/>
-                                                </div>
-
-                                            </div>
-                                        </div>
-                                        <button class="btn btn-primary btn-block px-5 mr-2" @click="getNextStep(count, counts, title)" v-if="showSaveButton(keys.answer, count, counts) && !(isLastStep==step)"><i class="mr-2" data-feather="shopping-cart"></i>Saved & Next Step</button>
-
-                                    </div>
-                                    <div class="form-group mb-1" v-if="keys.type == 'W'">
-                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has(title)">This field is required</small></label>
-                                        <select class="form-control custom-select" id="select-input" v-model="keys.selection">
-                                            <option v-for="answer, index in keys.answers" v-bind:value="answer" :name="title"  v-validate="'required'">[[ index]]</option>
-                                        </select>
-                                        <div v-if="keys.selection">
-                                            [[ keys.selection.answers ]]
-                                            <label class="d-block" >[[ keys.selection.title ]] <small style="display:block;color:red;" class="error" v-if="errors.has(keys.selection)">This field is required</small></label>
-                                            <select class="form-control custom-select" id="select-input" v-model="keys.answer" >
-                                                <option v-for="answer, index in keys.selection.answers" v-bind:value="index"  :name="keys.selection"  v-validate="'required'">[[ answer.title ]]</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group mb-1" v-if="keys.type == 'V'">
-                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has('selector-'+keys.title)">This field is required</small></label>
-                                        <div class="radio-tile-group" style="justify-content: left;">
-                                            <div class="input-container" v-for="answer, index in keys.answers">
-                                                <input id="walk" class="radio-button"  type="radio" :value="answer" v-model="keys.selection" :name="'selector-'+keys.title"   v-validate="'required'"/>
+                                            <div class="input-container" v-for="(answer, aIndex) in question.answers">
+                                                <input class="radio-button" type="radio" :name="'selection-'+question.question" :value="aIndex" v-model="question.answer" v-validate="'required'" @change="goToNextQuestion({validate: false})"/>
                                                 <div class="radio-tile">
                                                     <img :src="answer.image" style="max-width:95%;height:auto;margin:auto"/>
                                                 </div>
                                             </div>
-                                            <div style="width:100%;display:flex" v-if="keys.selection">
-                                                <label class="d-block" >[[ keys.selection.title ]] <small style="display:block;color:red;" class="error" v-if="errors.has('selection-'+keys.title)">This field is required</small></label>
+                                        </div>
+                                        
+                                        <button class="btn btn-primary btn-block px-5 mr-2" @click="goToNextQuestion" v-if="isSaveButtonShouldBeShown(question.answer)">
+                                            <i class="mr-2" data-feather="shopping-cart"></i>
+                                            Saved & Next Step
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="form-group mb-1" v-else-if="question.type == 'R'">
+                                        <label class="d-block">
+                                            [[ question.question ]]
+                                            <small style="display:block;color:red;" class="error" v-if="errors.has(qTitle)">This field is required</small>
+                                        </label>
+                                        
+                                        <div class="custom-control custom-option custom-control-inline mb-2" v-for="(answer, aIndex) in question.answers">
+                                            <input :id="qTitle+'-'+aIndex" class="custom-control-input" type="radio" :name="qTitle" :value="aIndex" v-model="question.answer" v-validate="'required'" @change="goToNextQuestion({validate: false})">
+                                            <label :for="qTitle+'-'+aIndex" class="custom-option-label" style="background:white; ">
+                                                <span class="custom-option-color" :style="{ backgroundColor: answer.title }"></span>
+                                            </label>
+                                        </div>
+                                        
+                                        <button class="btn btn-primary btn-block px-5 mr-2 mt-3" @click="goToNextQuestion" v-if="isMobile() && !isCurrentQuestionLast">
+                                            <i class="mr-2" data-feather="shopping-cart"></i>
+                                            Next Step
+                                        </button>
+                                    </div>
+    
+                                    <div class="form-group mb-1" v-else-if="question.type == 'S'">
+                                        <label class="d-block">
+                                            [[ question.question ]]
+                                            <small style="display:block;color:red;" class="error" v-if="errors.has(qTitle)">This field is required</small>
+                                        </label>
+                                        
+                                        <select class="form-control custom-select" id="select-input" v-model="question.answer">
+                                            <option :name="qTitle" :value="aIndex" v-validate="'required'" v-for="(answer, aIndex) in question.answers" :key="aIndex">[[ answer.title ]]</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group mb-1" v-else-if="question.type == 'T'">
+                                        <label class="d-block">
+                                            [[ question.question ]] (Max 20 Letters)
+                                            <small style="display:block;color:red;" class="error" v-if="errors.has(qTitle)">This field is required</small>
+                                        </label>
+                                        
+                                        <input type="text" class="form-control" v-model="question.answer" :name="qTitle" v-validate="'required'" maxlength="20"/>
+                                        
+                                        <button class="btn btn-primary btn-block px-5 mr-2 mt-3" @click="goToNextQuestion" v-if="isMobile() && !isCurrentQuestionLast">
+                                            <i class="mr-2" data-feather="shopping-cart"></i>
+                                            Next Step
+                                        </button>
+                                    </div>
+    
+                                    <div class="form-group mb-1" v-else-if="question.type == 'V'">
+                                        <label class="d-block">
+                                            [[ question.question ]]
+                                            <small style="display:block;color:red;" class="error" v-if="errors.has('selector-'+question.title)">This field is required</small>
+                                        </label>
+                                        
+                                        <div class="radio-tile-group" style="justify-content: left;">
+                                            <div class="input-container" v-for="(answer, aIndex) in question.answers">
+                                                <input id="walk" class="radio-button" type="radio" :name="'selector-'+question.title" :value="answer" v-model="question.selection" v-validate="'required'"/>
+                                                <div class="radio-tile">
+                                                    <img :src="answer.image" style="max-width:95%;height:auto;margin:auto"/>
+                                                </div>
                                             </div>
-                                            <div style="width:100%;display:flex" v-if="keys.selection">
-                                                <div class="input-container" v-for="answer, index in keys.selection.answers">
-                                                    <input id="walk" class="radio-button"  type="radio" :value="index" v-model="keys.answer" :name="'selection-'+keys.title"  v-validate="'required'" />
+                                            <div style="width:100%;display:flex" v-if="question.selection">
+                                                <label class="d-block" >
+                                                    [[ question.selection.title ]]
+                                                    <small style="display:block;color:red;" class="error" v-if="errors.has('selection-'+question.title)">This field is required</small>
+                                                </label>
+                                            </div>
+                                            <div style="width:100%;display:flex" v-if="question.selection">
+                                                <div class="input-container" v-for="(answer, aIndex) in question.selection.answers">
+                                                    <input id="walk" class="radio-button" type="radio" :name="'selection-'+question.title" :value="aIndex" v-model="question.answer" v-validate="'required'" />
                                                     <div class="radio-tile">
                                                         <img :src="answer.image" style="max-width:95%;height:auto;margin:auto"/>
                                                     </div>
                                                 </div>
                                             </div>
-
-
                                         </div>
                                     </div>
-                                    <div class="form-group mb-1" v-if="keys.type == 'C'">
-                                        <label class="d-block">[[ keys.question ]] <small style="display:block;color:red;" class="error" v-if="errors.has('image-'+keys.question)">This field is required</small></label>
-
-                                        <div style="position: relative" v-if="keys.answer.original_image">
-                                            <cropme ref="cropme" :image="keys.answer.original_image" :position-string="keys.answer.params" @crop="saveImageToAnswer(keys.answer, $event)"></cropme>
-                                            <button type="button" @click="removeImageFromAnswer(keys.answer)" style="position: absolute; top: 0; right: 0; background: none; border: none">
-                                                <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="30" height="30" class="icon icon-remove" style="top: -7.5px; right: -7.5px;"><path d="M511.921231 0C229.179077 0 0 229.257846 0 512 0 794.702769 229.179077 1024 511.921231 1024 794.781538 1024 1024 794.702769 1024 512 1024 229.257846 794.781538 0 511.921231 0ZM732.041846 650.633846 650.515692 732.081231C650.515692 732.081231 521.491692 593.683692 511.881846 593.683692 502.429538 593.683692 373.366154 732.081231 373.366154 732.081231L291.761231 650.633846C291.761231 650.633846 430.316308 523.500308 430.316308 512.196923 430.316308 500.696615 291.761231 373.523692 291.761231 373.523692L373.366154 291.918769C373.366154 291.918769 503.453538 430.395077 511.881846 430.395077 520.349538 430.395077 650.515692 291.918769 650.515692 291.918769L732.041846 373.523692C732.041846 373.523692 593.447385 502.547692 593.447385 512.196923 593.447385 521.412923 732.041846 650.633846 732.041846 650.633846Z" fill="red"></path></svg>
-                                            </button>
+                                    
+                                    <div class="form-group mb-1" v-else-if="question.type == 'W'">
+                                        <label class="d-block">
+                                            [[ question.question ]]
+                                            <small style="display:block;color:red;" class="error" v-if="errors.has(qTitle)">This field is required</small>
+                                        </label>
+                                        
+                                        <select class="form-control custom-select" id="select-input" v-model="question.selection">
+                                            <option :name="qTitle" :value="answer" v-validate="'required'" v-for="(answer, aIndex) in question.answers" :key="aIndex">[[ aIndex]]</option>
+                                        </select>
+                                        <div v-if="question.selection">
+                                            [[ question.selection.answers ]]
+                                            <label class="d-block">
+                                                [[ question.selection.title ]]
+                                                <small style="display:block;color:red;" class="error" v-if="errors.has(question.selection)">This field is required</small>
+                                            </label>
+                                            <select class="form-control custom-select" id="select-input" v-model="question.answer" >
+                                                <option :name="question.selection" :value="aIndex" v-validate="'required'" v-for="(answer, aIndex) in question.selection.answers" :key="aIndex">[[ answer.title ]]</option>
+                                            </select>
                                         </div>
-                                        <input-image default-img="https://glamourbabyboutique.com/static/img/taptoupload.png" v-model="keys.answer.original_image" v-else></input-image>
-                                        <input type="hidden" :name="'image-'+keys.question" v-model="keys.answer.original_image" v-validate="'required'">
                                     </div>
                                 </div>
                             </transition-group>
                         </div>
+                        
                         <form ref="form" class="pb-4" method="POST" action="#" @submit="submitForm($event, 'prevent')" id="generateForm" ref="form">
                             <div class="d-flex flex-wrap pt-1">
-                                <div v-if="isLastStep==step && isMobile()">
-                                    <button class="btn btn-primary btn-block px-5" type="submit"><i class="mr-2" data-feather="shopping-cart"></i>Update</button>
-                                </div>
-                                <div v-if="!isMobile()">
+                                <div v-if="!isMobile() || isCurrentQuestionLast">
                                     <button class="btn btn-primary btn-block px-5" type="submit"><i class="mr-2" data-feather="shopping-cart"></i>Update</button>
                                 </div>
                             </div>
-                            <div class="mt-3 text-center"><small><a class="btn btn-sm btn-outline-info"  @click="editting=false" v-if="stored_data">Go back to selecting quantity →</a></small></div>
+                            <div class="mt-3 text-center"><small><a class="btn btn-sm btn-outline-info" @click="editting=false" v-if="stored_data">Go back to selecting quantity →</a></small></div>
                             <input name="json" :value="inputJSON" type="hidden"/>
                         </form>
-                        </p>
                     </div>
 
                 </div>
@@ -263,6 +317,9 @@
 <script>
     function generateUID() {
         return Math.ceil(Math.random() * Number.MAX_SAFE_INTEGER).toString(36);
+    }
+    function isDummyEqual(a, b) {
+        return (a === b) || (JSON.stringify(a) === JSON.stringify(b));
     }
     function parseImageParams(string) {
         if (!string) return;
@@ -383,173 +440,155 @@
             }
         }
     });
-    var app = new Vue({
+    const app = new Vue({
         el: '#app',
         delimiters: ['[[', ']]'],
-        data() { return {
-            step: '0|0',
-            custom_1: 'S',
-            custom_2: 'NB',
-            custom_3: 'NB',
-            custom_4: 'S',
-            custom_5: 'NB',
-            percent: 0,
-            editting: true,
-            background: '',
-            color: '',
-            preload: '',
-            initial: null,
-            question_set: {"MugCreator": {"name": "MugCreator", "attributes": {"Upload a Picture": {"question": "Upload a Picture", "answer": {"original_image": "", "image": ""}, "type": "C"}, "Select a Style": {"answers": {"147": {"title": "1", "image": "/media/processing/mug-testing_Y6wdZPv.png"}}, "question": "Select a Style", "answer": "", "selection": "", "type": "I"}}}},
-            stored_data: ''
-        }
-
-        },
-        mounted: function(){
-            if (this.stored_data) {
-                if ("color" in this.stored_data){
-                    this.color = this.stored_data['color']
-                    $('#txtclor').attr('color',this.color.replace('\(','').replace('\)','').replace(' ',''))
-                }
-                if ("background" in this.stored_data){
-                    this.background = this.stored_data['background']
-                    $('#bgcolor').attr('color',this.background.replace('\(','').replace('\)','').replace(' ',''))
-                }
-                for (var key in this.question_set) {
-                    for (value in this.question_set[key]["attributes"]){
-                        this.question_set[key]["attributes"][value]["answer"] = this.stored_data[key]["attributes"][value]
-
-                        if ("answers" in this.question_set[key]["attributes"][value]) {
-                            for (selector in this.question_set[key]["attributes"][value]["answers"]){
-                                results = this.question_set[key]["attributes"][value]["answers"][selector]
-                                if ("answers" in results){
-                                    if (this.stored_data[key]["attributes"][value] in
-                                        this.question_set[key]["attributes"][value]["answers"][selector]["answers"]
-                                    ) {
-                                        this.question_set[key]["attributes"][value]["selection"] = this.question_set[key]["attributes"][value]["answers"][selector]
+        data() {
+            return {
+                breadcrumbs: [0, 0],
+                custom_1: 'S',
+                custom_2: 'NB',
+                custom_3: 'NB',
+                custom_4: 'S',
+                custom_5: 'NB',
+                percent: 0,
+                editting: true,
+                background: '',
+                color: '',
+                preload: '',
+                initial: null,
+                /*
+                * Question types:
+                * C - Crop an image
+                * I - Select an image
+                * R - Select a color
+                * S - Select from a list
+                * T - Type a text
+                * V - Select an image with ?
+                * W - Select from a list with ?
+                */
+                question_set: {
+                    MugCreator: { // a grouping
+                        name: 'MugCreator',
+                        attributes: {
+                            'Upload a Picture': { // a question
+                                question: 'Upload a Picture',
+                                answer: {
+                                    original_image: '',
+                                    image:          ''
+                                },
+                                type: 'C'
+                            },
+                            'Select a Style': {
+                                answers: {
+                                    '147': {
+                                        title: '1',
+                                        image: '/media/processing/mug-testing_Y6wdZPv.png'
                                     }
-                                    else {}
-                                }
-                            }
-                        }
-                        if (this.question_set[key]["attributes"][value]["type"] == "C") {
-                            console.log('yes')
-                            Vue.set(this, 'initial', "/pdo/"+ this.stored_data[key]["attributes"][value])
-                        }
-                    }
-                }
-            }
-            if (this.preload) {
-                console.log('yes')
-                for (var k in this.question_set) {
-                    console.log(k)
-                    if (k in this.preload) {
-                        console.log('true')
-                        for (v in this.question_set[k]["attributes"]) {
-                            console.log(v)
-                            if (v in this.preload[k]["attributes"]) {
-                                console.log('found')
-                                this.question_set[k]["attributes"][v]["answer"] = this.preload[k]["attributes"][v]
-                                this.question_set[k]["attributes"][v]["preload"] = true;
-                            }
-                            else {
-                                this.question_set[k]["attributes"][v]["preload"] = false;
+                                },
+                                question:  'Select a Style',
+                                answer:    '',
+                                selection: '',
+                                type:      'I'
                             }
                         }
                     }
-                }
+                },
+                stored_data: ''
             }
         },
-
-        methods: {
-            confirmLastStep(parent, value) {
-                steps = parent + '|' + value
-                console.log(steps, this.isLastStep)
-                return steps == this.isLastStep
+        computed: {
+            currentGrouping() {
+                return Object.values(this.question_set)[this.breadcrumbs[0]];
             },
-            showSaveButton(value, count, counts){
-                if (!this.isMobile()){return false}
-                if (!value){return false}
-                else {
-                    return (this.step == this.isLastStep) || (!this.isMobile())
+            currentQuestion() {
+                return Object.values(this.currentGrouping.attributes)[this.breadcrumbs[1]];
+            },
+    
+            isCurrentGroupingLast() {
+                return this.breadcrumbs[0] === this.lastStep[0];
+            },
+            isCurrentQuestionLastInCurrentGrouping() {
+                return this.breadcrumbs[1] === (Object.keys(this.currentGrouping.attributes).length - 1);
+            },
+            isCurrentQuestionLast() {
+                return isDummyEqual(this.breadcrumbs, this.lastStep);
+            },
+            
+            lastStep: function() {
+                const grNames = Object.keys(this.question_set);
+                const qNames  = Object.keys(this.question_set[grNames[grNames.length-1]].attributes);
+                
+                return [grNames.length-1, qNames.length-1];
+            },
+            inputJSON: function() {
+                const strippedQuestionSet = {};
+                for (const [grName, grouping] of Object.entries(this.question_set)) {
+                    strippedQuestionSet[grName] = {
+                        attributes: {}
+                    };
+                    
+                    for (const [qName, question] of Object.entries(grouping.attributes)) {
+                        strippedQuestionSet[grName].attributes[qName] = question.answer;
+                    }
+                }
+                
+                return JSON.stringify({
+                    background: this.background.replace("rgb", ""),
+                    color:      this.color     .replace("rgb", ""),
+                    ...strippedQuestionSet
+                });
+            }
+        },
+        methods: {
+            isGroupingShouldBeShown(groupingIndex) {
+                return !this.isMobile() || (groupingIndex == this.breadcrumbs[0]);
+            },
+            isQuestionShouldBeShown(groupingIndex, questionIndex) {
+                return !this.isMobile() || isDummyEqual([groupingIndex, questionIndex], this.breadcrumbs);
+            },
+            isSaveButtonShouldBeShown(condition) {
+                return condition && this.isMobile() && !this.isCurrentQuestionLast && this.currentQuestion.answer;
+            },
+            
+            goToNextGrouping() {
+                if (this.isCurrentGroupingLast) {
+                    this.submitForm();
+                } else {
+                    this.$set(this.breadcrumbs, 0, this.breadcrumbs[0]+1);
+                    this.$set(this.breadcrumbs, 1, 0);
                 }
             },
-            stepParent(value) {
-                parent = this.step.split('|')[0]
-                return (parent == value) || (!this.isMobile())
-            },
-            getStep(parent, value){
-                x = this.step.split('|')
-                return ((parent == x[0]) && (value == x[1])) || (!this.isMobile())
-            },
-            getNextStep(parent, value, validate){
-                this.$nextTick(function () {
-                    if (validate != 'false'){
-                        this.$validator.validateAll().then((result) => {
-                            if (result) {
-                                parent_list = Object.keys(this.question_set)
-                                step_list = Object.keys(this.question_set[parent_list[parent]]["attributes"])
-                                if (value == step_list.length - 1) {
-                                    this.getNextParent(parent)
-                                }
-                                else {
-                                    steps = this.step.split('|')
-                                    this.step = steps[0] + '|' + (parseInt(value) + 1)
-                                }
-                            }
-                        }).catch((result) =>{console.log(result)})
-                    } else {
-                        parent_list = Object.keys(this.question_set)
-                        step_list = Object.keys(this.question_set[parent_list[parent]]["attributes"])
-                        if (value == step_list.length-1){
-                            this.getNextParent(parent)
-                        }
-                        else{
-                            steps = this.step.split('|')
-                            this.step = steps[0]+'|'+(parseInt(value)+1)
+            async goToNextQuestion({validate = true} = {}) {
+                try {
+                    if (!validate || await this.$validator.validateAll()) {
+                        if (this.isCurrentQuestionLastInCurrentGrouping) {
+                            this.goToNextGrouping();
+                        } else {
+                            this.$set(this.breadcrumbs, 1, this.breadcrumbs[1]+1);
                         }
                     }
-                })
+                } catch (e) {
+                    console.log(e);
+                }
+                
                 document.getElementById("question_top").scrollIntoView();
             },
-
-            loader(){
+    
+            async cropAndGoToNextQuestion() {
+                await this.$refs.cropme[0].crop();
+                this.goToNextQuestion();
+            },
+            
+            loader() {
                 this.percent += 10;
                 console.log(this.percent)
             },
-            getNextParent(parent) {
-                parent_list = Object.keys(this.question_set)
-                if (parent == parent_list.length-1) {
-                    console.log(this.inputJSON)
-                    this.$nextTick(function () {
-                        if (this.isMobile()){
-                            $('#modalSmall').modal('show');
-                            this.percent = 0;
-                            console.log('a')
-                            setTimeout(() => { this.loader(); }, 300);
-                            setTimeout(() => { this.loader(); }, 400);
-                            setTimeout(() => { this.loader(); }, 700);
-                            setTimeout(() => { this.loader(); }, 1000);
-                            setTimeout(() => { this.loader(); }, 8000);
-                            setTimeout(() => { this.loader(); }, 10000);
-                            setTimeout(() => { this.loader(); }, 13000);
-                            setTimeout(() => { this.loader(); }, 16000);
-                            setTimeout(() => { this.loader(); }, 18000);
-                            setTimeout(() => { this.loader(); }, 20000);
-                            this.$refs.form.submit()
-                        }
-                    });
-                } else {
-                    steps = this.step.split('|')
-                    this.step = (parseInt(parent)+1)+'|'+0
-                }
-            },
+            
             isMobile() {
-                if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                    return true
-                } else {
-                    return false
-                }
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             },
+            
             removeImageFromAnswer(answer) {
                 answer.original_image = null;
                 answer.image          = null;
@@ -559,29 +598,20 @@
                 answer.image  = result.image;
                 answer.params = btoa(JSON.stringify(result.params));
             },
-            submitForm: async function(e, prevent) {
-                if (prevent) e.preventDefault();
+            async submitForm(ev, prevent) {
+                if (ev && prevent) ev.preventDefault();
                 
                 $('#modalSmall').modal('show');
                 this.percent = 0;
-                setTimeout(() => { this.loader(); }, 300);
-                setTimeout(() => { this.loader(); }, 400);
-                setTimeout(() => { this.loader(); }, 700);
-                setTimeout(() => { this.loader(); }, 1000);
-                setTimeout(() => { this.loader(); }, 8000);
-                setTimeout(() => { this.loader(); }, 10000);
-                setTimeout(() => { this.loader(); }, 13000);
-                setTimeout(() => { this.loader(); }, 16000);
-                setTimeout(() => { this.loader(); }, 18000);
-                setTimeout(() => { this.loader(); }, 20000);
+                [300, 400, 700, 1000, 8000, 10000, 13000, 16000, 18000, 20000].forEach(delay => setTimeout(this.loader, delay));
                 
                 try {
                     if (await this.$validator.validateAll()) {
-                        await this.$refs.cropme[0].crop();
+                        if (this.$refs.cropme && this.$refs.cropme[0]) await this.$refs.cropme[0].crop();
                         this.$refs.form.submit();
                     }
-                } catch (_) {
-                    console.log('false')
+                } catch (e) {
+                    console.log(e);
                     $('#modalSmall').modal('hide')
                 }
             },
@@ -592,38 +622,57 @@
                 this.color = color;
             }
         },
-        computed: {
-            isLastStep: function(){
-                keys = Object.keys(this.question_set)
-
-                questions = Object.keys(this.question_set[keys[keys.length-1]]["attributes"])
-
-                return (keys.length-1)+'|'+(questions.length-1)
-            },
-            stripQuestionSet: function(){
-                _this = this
-                qs = {};
-                obj_keys = Object.keys(this.question_set)
-                for (item in obj_keys){
-                    attr = Object.keys(this.question_set[obj_keys[item]]["attributes"])
-                    qs[obj_keys[item]] = {"attributes":{}}
-                    for(answer in attr){
-                        qs[obj_keys[item]]["attributes"][attr[answer]] = this.question_set[obj_keys[item]]["attributes"][attr[answer]]["answer"]
+        mounted() {
+            if (this.stored_data) {
+                if ('color' in this.stored_data) {
+                    this.color = this.stored_data.color;
+                    $('#txtclor').attr('color', this.color.replace('\(','').replace('\)','').replace(' ',''));
+                }
+                if ('background' in this.stored_data){
+                    this.background = this.stored_data.background;
+                    $('#bgcolor').attr('color', this.background.replace('\(','').replace('\)','').replace(' ',''));
+                }
+                
+                for (const [grName, grouping] of Object.entries(this.question_set)) {
+                    for (const [qName, question] of Object.entries(grouping.attributes)) {
+                        question.answer = this.stored_data[grName].attributes[qName];
+                    
+                        if ('answers' in question) {
+                            for (const answer of Object.values(question.answers)) {
+                                if ('answers' in answer) {
+                                    if (this.stored_data[grName].attributes[qName] in answer.answers) {
+                                        question.selection = answer;
+                                    }
+                                }
+                            }
+                        }
+                        if (question.type == 'C') {
+                            console.log('yes');
+                            Vue.set(this, 'initial', '/pdo/' + this.stored_data[grName].attributes[qName]);
+                        }
                     }
                 }
-                return qs
-            },
-            generateJSON: function(){
-                return {
-                    "background": this.background.replace("rgb", ""),
-                    "color": this.color.replace("rgb", ""),
-                    ... this.stripQuestionSet
+            }
+            if (this.preload) {
+                console.log('yes');
+                for (const [grName, grouping] of Object.entries(this.question_set)) {
+                    console.log(grName);
+                    if (grName in this.preload) {
+                        console.log('true');
+                        for (const [qName, question] of Object.entries(grouping.attributes)) {
+                            console.log(qName);
+                            if (qName in this.preload[grName].attributes) {
+                                console.log('found')
+                                question.answer  = this.preload[grName].attributes[qName];
+                                question.preload = true;
+                            }
+                            else {
+                                question.preload = false;
+                            }
+                        }
+                    }
                 }
-            },
-            inputJSON: function(){
-                return JSON.stringify(this.generateJSON)
             }
         }
-    })
-
+    });
 </script>
