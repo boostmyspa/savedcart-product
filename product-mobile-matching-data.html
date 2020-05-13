@@ -111,7 +111,8 @@
                                         </label>
         
                                         <div style="position: relative" v-if="question.answer.original_image">
-                                            <cropme ref="cropme" :image="question.answer.original_image" :position-string="question.answer.params" @crop="saveImageToAnswer(question.answer, $event)"></cropme>
+                                            <cropme ref="cropme" :image="question.answer.original_image" :position-string="question.answer.params" stencil-image="https://glamourbabyboutique.com/media/product_images/mug-testing.png"
+                                                    @crop="saveImageToAnswer(question.answer, $event)"></cropme>
                                             
                                             <button type="button" @click="removeImageFromAnswer(question.answer)" style="position: absolute; top: 0; right: 0; background: none; border: none">
                                                 <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="30" height="30" class="icon icon-remove" style="top: -7.5px; right: -7.5px;"><path d="M511.921231 0C229.179077 0 0 229.257846 0 512 0 794.702769 229.179077 1024 511.921231 1024 794.781538 1024 1024 794.702769 1024 512 1024 229.257846 794.781538 0 511.921231 0ZM732.041846 650.633846 650.515692 732.081231C650.515692 732.081231 521.491692 593.683692 511.881846 593.683692 502.429538 593.683692 373.366154 732.081231 373.366154 732.081231L291.761231 650.633846C291.761231 650.633846 430.316308 523.500308 430.316308 512.196923 430.316308 500.696615 291.761231 373.523692 291.761231 373.523692L373.366154 291.918769C373.366154 291.918769 503.453538 430.395077 511.881846 430.395077 520.349538 430.395077 650.515692 291.918769 650.515692 291.918769L732.041846 373.523692C732.041846 373.523692 593.447385 502.547692 593.447385 512.196923 593.447385 521.412923 732.041846 650.633846 732.041846 650.633846Z" fill="red"></path></svg>
@@ -329,8 +330,8 @@
 
     Vue.use(VeeValidate);
     Vue.component('cropme', {
-        template: `<div></div>`,
-        props: ['image', 'positionString'],
+        template: `<div ref="root"></div>`,
+        props: ['image', 'positionString', 'stencilImage'],
         data() {
             return {
                 instance: null
@@ -383,6 +384,13 @@
                 url:      this.image,
                 position: this.positionString ? parseImageParams(this.positionString).position : {}
             });
+            
+            if (this.stencilImage) {
+                const $viewport = this.$refs.root.querySelector('.viewport');
+                if ($viewport) {
+                    $viewport.style = `background: url('${this.stencilImage}'); background-size: contain`;
+                }
+            }
         }
     });
     Vue.component('input-image', {
