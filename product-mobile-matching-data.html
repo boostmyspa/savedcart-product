@@ -110,16 +110,16 @@
                                             <small style="display:block;color:red;" class="error" v-if="errors.has('image-'+question.question)">This field is required</small>
                                         </label>
         
-                                        <div style="position: relative" v-if="question.answer.original_image">
-                                            <cropme ref="cropme" :image="question.answer.original_image" :position-string="question.answer.params" stencil-image="https://glamourbabyboutique.com/media/product_images/mug-testing.png"
+                                        <div style="position: relative" v-if="question.answer[ORIGINAL_IMAGE]">
+                                            <cropme ref="cropme" :image="question.answer[ORIGINAL_IMAGE]" :position-string="question.answer.params" stencil-image="https://glamourbabyboutique.com/media/product_images/mug-testing.png"
                                                     @crop="saveImageToAnswer(question.answer, $event)"></cropme>
                                             
                                             <button type="button" @click="removeImageFromAnswer(question.answer)" style="position: absolute; top: 0; right: 0; background: none; border: none">
                                                 <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="30" height="30" class="icon icon-remove" style="top: -7.5px; right: -7.5px;"><path d="M511.921231 0C229.179077 0 0 229.257846 0 512 0 794.702769 229.179077 1024 511.921231 1024 794.781538 1024 1024 794.702769 1024 512 1024 229.257846 794.781538 0 511.921231 0ZM732.041846 650.633846 650.515692 732.081231C650.515692 732.081231 521.491692 593.683692 511.881846 593.683692 502.429538 593.683692 373.366154 732.081231 373.366154 732.081231L291.761231 650.633846C291.761231 650.633846 430.316308 523.500308 430.316308 512.196923 430.316308 500.696615 291.761231 373.523692 291.761231 373.523692L373.366154 291.918769C373.366154 291.918769 503.453538 430.395077 511.881846 430.395077 520.349538 430.395077 650.515692 291.918769 650.515692 291.918769L732.041846 373.523692C732.041846 373.523692 593.447385 502.547692 593.447385 512.196923 593.447385 521.412923 732.041846 650.633846 732.041846 650.633846Z" fill="red"></path></svg>
                                             </button>
                                         </div>
-                                        <input-image default-img="https://glamourbabyboutique.com/static/img/taptoupload.png" v-model="question.answer.original_image" v-else></input-image>
-                                        <input type="hidden" :name="'image-'+question.question" v-model="question.answer.original_image" v-validate="'required'">
+                                        <input-image default-img="https://glamourbabyboutique.com/static/img/taptoupload.png" v-model="question.answer[ORIGINAL_IMAGE]" @uploading="imageWillBeUploaded = $event.then(id => question.answer.original_image = id)" v-else></input-image>
+                                        <input type="hidden" :name="'image-'+question.question" v-model="question.answer[ORIGINAL_IMAGE]" v-validate="'required'">
                                         
                                         <button class="btn btn-primary btn-block px-5 mr-2" @click="cropAndGoToNextQuestion" v-if="isSaveButtonShouldBeShown(question.answer.original_image)">
                                             <i class="mr-2" data-feather="shopping-cart"></i>
@@ -315,19 +315,17 @@
 <script src="https://cdn.jsdelivr.net/npm/vuetify@1.1.6/dist/vuetify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/boostmyspa/cropme@handles/dist/cropme.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/boostmyspa/cropme@handles/dist/cropme.min.css">
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script>
+    const IMAGES_API = 'https://glamourbabyboutique.com/api-cart/images';
+    
     function generateUID() {
         return Math.ceil(Math.random() * Number.MAX_SAFE_INTEGER).toString(36);
     }
     function isDummyEqual(a, b) {
         return (a === b) || (JSON.stringify(a) === JSON.stringify(b));
     }
-    function parseImageParams(string) {
-        if (!string) return;
     
-        return JSON.parse(atob(string));
-    }
-
     Vue.use(VeeValidate);
     Vue.component('cropme', {
         template: `<div ref="root"></div>`,
@@ -370,7 +368,7 @@
                 }
             };
             if (this.positionString) {
-                const viewportOptions = parseImageParams(this.positionString).viewport;
+                const viewportOptions = this.positionString.viewport;
                 if (viewportOptions) {
                     if (!options.viewport) options.viewport = {};
     
@@ -382,7 +380,7 @@
             this.instance = new Cropme(this.$el, options);
             this.instance.bind({
                 url:      this.image,
-                position: this.positionString ? parseImageParams(this.positionString).position : {}
+                position: this.positionString ? this.positionString.position : {}
             });
             
             if (this.stencilImage) {
@@ -440,6 +438,11 @@
                 this.process(file);
             },
             process(file) {
+                const data = new FormData();
+                data.append('image', file);
+                const promise = axios.post(IMAGES_API, data).then(({data: {id}}) => id);
+                this.$emit('uploading', promise);
+                
                 var reader = new FileReader();
                 reader.addEventListener('load', () => {
                     this.$emit('input', reader.result);
@@ -453,6 +456,9 @@
         delimiters: ['[[', ']]'],
         data() {
             return {
+                ORIGINAL_IMAGE: Symbol('Original image file'),
+                imageWillBeUploaded: null,
+                
                 breadcrumbs: [0, 0],
                 custom_1: 'S',
                 custom_2: 'NB',
@@ -483,7 +489,7 @@
                                 question: 'Upload a Picture',
                                 answer: {
                                     original_image: '',
-                                    image:          ''
+                                    params:         ''
                                 },
                                 type: 'C'
                             },
@@ -598,13 +604,12 @@
             },
             
             removeImageFromAnswer(answer) {
-                answer.original_image = null;
-                answer.image          = null;
-                answer.params         = null;
+                answer.original_image       = null;
+                answer[this.ORIGINAL_IMAGE] = null;
+                answer.params               = null;
             },
             saveImageToAnswer(answer, result) {
-                answer.image  = result.image;
-                answer.params = btoa(JSON.stringify(result.params));
+                answer.params = result.params;
             },
             async submitForm(ev, prevent) {
                 if (ev && prevent) ev.preventDefault();
@@ -613,6 +618,7 @@
                 this.percent = 0;
                 [300, 400, 700, 1000, 8000, 10000, 13000, 16000, 18000, 20000].forEach(delay => setTimeout(this.loader, delay));
                 
+                await this.imageWillBeUploaded;
                 try {
                     if (await this.$validator.validateAll()) {
                         if (this.$refs.cropme && this.$refs.cropme[0]) await this.$refs.cropme[0].crop();
