@@ -317,7 +317,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/boostmyspa/cropme@handles/dist/cropme.min.css">
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script>
-    const IMAGES_API = 'https://glamourbabyboutique.com/api-cart/images';
+    const API                 = 'https://glamourbabyboutique.com';
+    const IMAGES_API          = `${API}/api-cart/images`;
+    const ORIGINAL_IMAGES_API = `${API}/pdo`;
     
     function generateUID() {
         return Math.ceil(Math.random() * Number.MAX_SAFE_INTEGER).toString(36);
@@ -470,7 +472,6 @@
                 background: '',
                 color: '',
                 preload: '',
-                initial: null,
                 /*
                 * Question types:
                 * C - Crop an image
@@ -661,8 +662,8 @@
                             }
                         }
                         if (question.type == 'C') {
-                            console.log('yes');
-                            Vue.set(this, 'initial', '/pdo/' + this.stored_data[grName].attributes[qName]);
+                            axios.get(`${ORIGINAL_IMAGES_API}/${question.answer.original_image}`, {responseType: 'blob'})
+                                    .then(({data}) => this.$set(question.answer, this.ORIGINAL_IMAGE, URL.createObjectURL(data)));
                         }
                     }
                 }
